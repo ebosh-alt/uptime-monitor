@@ -1,0 +1,17 @@
+Postgres:
+  port: 6132
+  host: localhost
+  user: postgres
+  password: postgres
+  DBName: uptime_monitor_db
+  sslMode: disable
+
+Server:
+  host: "0.0.0.0"
+  port: "3000"
+
+Monitor:
+  interval_seconds: 60
+  request_timeout_seconds: 5
+  history_limit: 100
+  max_concurrency: 5

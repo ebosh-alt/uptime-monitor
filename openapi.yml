@@ -1,0 +1,341 @@
+openapi: 3.0.3
+info:
+  title: Uptime Monitor API
+  version: "0.1.0"
+
+servers:
+  - url: http://localhost:3000/api
+    description: Local server
+
+tags:
+  - name: Urls
+
+components:
+  schemas:
+    ErrorResponse:
+      type: object
+      required: [error]
+      properties:
+        error:
+          type: object
+          required: [code, message]
+          properties:
+            code:
+              type: string
+              enum:
+                - NOT_FOUND
+                - ERROR_CREATE_URL
+                - INVALID_ARGUMENT
+                - URL_EXISTS
+                - EMPTY_URL
+                - ERROR_ACTIVATE_URL
+                - ERROR_DEACTIVATE_URL
+            message:
+              type: string
+      example:
+        error:
+          code: INVALID_ARGUMENT
+          message: invalid request body
+
+    CreateUrlRequest:
+      type: object
+      required: [url]
+      properties:
+        url:
+          type: string
+          format: uri
+          minLength: 1
+      example:
+        url: https://example.com
+
+    DeleteUrlRequest:
+      type: object
+      required: [url]
+      properties:
+        url:
+          type: string
+          format: uri
+          minLength: 1
+      example:
+        url: https://example.com
+
+    ActivateUrlRequest:
+      type: object
+      required: [url]
+      properties:
+        url:
+          type: string
+          format: uri
+          minLength: 1
+      example:
+        url: https://example.com
+
+    DeactivateUrlRequest:
+      type: object
+      required: [url]
+      properties:
+        url:
+          type: string
+          format: uri
+          minLength: 1
+      example:
+        url: https://example.com
+
+    CreateUrlResponse:
+      type: object
+      required: [id]
+      properties:
+        id:
+          type: integer
+          format: int64
+        url:
+          type: string
+          format: uri
+        active:
+          type: boolean
+        created_at:
+          type: string
+          format: date-time
+      example:
+        id: 123
+        url: https://example.com
+        active: true
+        created_at: "2024-01-01T12:00:00Z"
+
+    Url:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+        url:
+          type: string
+          format: uri
+        active:
+          type: boolean
+          description: Флаг активности мониторинга
+        created_at:
+          type: string
+          format: date-time
+
+    UrlListResponse:
+      type: object
+      required: [urls]
+      properties:
+        urls:
+          type: array
+          items:
+            $ref: '#/components/schemas/Url'
+
+    UrlHistoryEntry:
+      type: object
+      properties:
+        timestamp:
+          type: string
+          format: date-time
+        status:
+          type: integer
+          description: HTTP статус ответа проверки
+          example: 200
+        latency_ms:
+          type: integer
+          description: Время ответа в миллисекундах
+      example:
+        timestamp: "2025-01-01T12:00:00Z"
+        status: 200
+        latency_ms: 120
+
+    UrlHistoryResponse:
+      type: object
+      required: [history]
+      properties:
+        history:
+          type: array
+          items:
+            $ref: '#/components/schemas/UrlHistoryEntry'
+
+paths:
+  /url:
+    post:
+      tags: [Urls]
+      summary: Добавить URL в мониторинг
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateUrlRequest'
+      responses:
+        '201':
+          description: Создано
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CreateUrlResponse'
+        '400':
+          description: Невалидное тело запроса
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ErrorResponse' }
+        '422':
+          description: Ссылка пустая
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ErrorResponse' }
+        '409':
+          description: URL уже существует
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ErrorResponse' }
+        '500':
+          description: Ошибка при создании URL
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ErrorResponse' }
+
+    delete:
+      tags: [Urls]
+      summary: Удалить URL из мониторинга
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DeleteUrlRequest'
+      responses:
+        '204':
+          description: Удалено
+        '400':
+          description: Невалидное тело запроса
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ErrorResponse' }
+        '422':
+          description: Ссылка пустая
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ErrorResponse' }
+        '404':
+          description: URL не найден
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ErrorResponse' }
+        '500':
+          description: Ошибка при удалении URL
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ErrorResponse' }
+
+    get:
+      tags: [Urls]
+      summary: Получить список URL
+      responses:
+        '200':
+          description: Список URL
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UrlListResponse'
+        '500':
+          description: Внутренняя ошибка сервера
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ErrorResponse' }
+
+  /url/activate:
+    post:
+      tags: [Urls]
+      summary: Активировать URL (включить мониторинг)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ActivateUrlRequest'
+      responses:
+        '204':
+          description: Активирован
+        '400':
+          description: Невалидное тело запроса
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ErrorResponse' }
+        '422':
+          description: Ссылка пустая
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ErrorResponse' }
+        '404':
+          description: URL не найден
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ErrorResponse' }
+        '500':
+          description: Ошибка активации URL
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ErrorResponse' }
+
+  /url/deactivate:
+    post:
+      tags: [Urls]
+      summary: Деактивировать URL (выключить мониторинг)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DeactivateUrlRequest'
+      responses:
+        '204':
+          description: Деактивирован
+        '400':
+          description: Невалидное тело запроса
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ErrorResponse' }
+        '422':
+          description: Ссылка пустая
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ErrorResponse' }
+        '404':
+          description: URL не найден
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ErrorResponse' }
+        '500':
+          description: Ошибка деактивации URL
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ErrorResponse' }
+
+  /url/{id}/history:
+    get:
+      tags: [Urls]
+      summary: История проверок URL
+      parameters:
+        - name: id
+          in: path
+          required: true
+          description: Идентификатор URL в базе
+          schema:
+            type: integer
+            format: int64
+      responses:
+        '200':
+          description: История событий
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UrlHistoryResponse'
+        '404':
+          description: URL не найден
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ErrorResponse' }
+        '500':
+          description: Внутренняя ошибка сервера
+          content:
+            application/json:
+              schema: { $ref: '#/components/schemas/ErrorResponse' }

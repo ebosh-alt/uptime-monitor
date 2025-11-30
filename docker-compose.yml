@@ -1,0 +1,25 @@
+services:
+  db:
+    image: postgres:16-alpine
+    container_name: uptime-monitor-db
+    environment:
+      POSTGRES_DB: uptime_monitor_db
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    ports:
+      - "6132:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U postgres -d uptime_monitor_db" ]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+      start_period: 10s
+    profiles:
+      - postgres
+
+volumes:
+  pgdata:
+
+
