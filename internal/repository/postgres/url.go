@@ -3,6 +3,8 @@ package postgres
 import (
 	"context"
 	"errors"
+	"time"
+
 	"github.com/jackc/pgx/v5/pgconn"
 	"uptime-monitor/internal/entities"
 	"uptime-monitor/internal/repository/response"
@@ -24,11 +26,18 @@ const (
 )
 
 func (p *Postgres) UrlCreate(ctx context.Context, url *entities.Url) (*entities.Url, error) {
+	var (
+		id        int64
+		urlStr    string
+		active    bool
+		createdAt time.Time
+	)
+
 	err := p.db.QueryRow(ctx, urlCreateSql, url.Url).Scan(
-		&url.Id,
-		&url.Url,
-		&url.Active,
-		&url.CreatedAt,
+		&id,
+		&urlStr,
+		&active,
+		&createdAt,
 	)
 	if err != nil {
 		p.log.Errorw("failed to create url", "error", err)
@@ -38,13 +47,16 @@ func (p *Postgres) UrlCreate(ctx context.Context, url *entities.Url) (*entities.
 		}
 		return nil, response.ErrCreateUrl
 	}
-	p.log.Infow("created url", "id", url.Id, "url", url.Url, "active", url.Active, "created_at", url.CreatedAt)
-	return &entities.Url{
-		Id:        url.Id,
-		Url:       url.Url,
-		Active:    url.Active,
-		CreatedAt: url.CreatedAt,
-	}, nil
+
+	createdUrl := &entities.Url{
+		Id:        &id,
+		Url:       &urlStr,
+		Active:    &active,
+		CreatedAt: &createdAt,
+	}
+
+	p.log.Infow("created url", "id", createdUrl.Id, "url", createdUrl.Url, "active", createdUrl.Active, "created_at", createdUrl.CreatedAt)
+	return createdUrl, nil
 }
 
 func (p *Postgres) UrlDelete(ctx context.Context, url *entities.Url) error {
@@ -109,11 +121,18 @@ func (p *Postgres) Url(ctx context.Context, url *entities.Url) (*entities.Url, e
 		return nil, response.ErrNotFoundUrl
 	}
 
+	var (
+		id        int64
+		urlStr    string
+		active    bool
+		createdAt time.Time
+	)
+
 	err := p.db.QueryRow(ctx, query, arg).Scan(
-		&url.Id,
-		&url.Url,
-		&url.Active,
-		&url.CreatedAt,
+		&id,
+		&urlStr,
+		&active,
+		&createdAt,
 	)
 	if err != nil {
 		if errors.Is(err, pgx.ErrNoRows) {
@@ -123,7 +142,13 @@ func (p *Postgres) Url(ctx context.Context, url *entities.Url) (*entities.Url, e
 		p.log.Errorw("failed to get url", "error", err)
 		return nil, err
 	}
-	return url, nil
+
+	return &entities.Url{
+		Id:        &id,
+		Url:       &urlStr,
+		Active:    &active,
+		CreatedAt: &createdAt,
+	}, nil
 }
 
 func (p *Postgres) ListUrls(ctx context.Context) ([]*entities.Url, error) {
@@ -137,12 +162,23 @@ func (p *Postgres) ListUrls(ctx context.Context) ([]*entities.Url, error) {
 	defer rows.Close()
 	urls := make([]*entities.Url, 0)
 	for rows.Next() {
-		var u entities.Url
-		if err := rows.Scan(&u.Id, &u.Url, &u.Active, &u.CreatedAt); err != nil {
+		var (
+			id        int64
+			urlStr    string
+			active    bool
+			createdAt time.Time
+		)
+		if err := rows.Scan(&id, &urlStr, &active, &createdAt); err != nil {
 			p.log.Errorw("failed to scan url", "error", err)
 			return nil, response.ErrListUrls
 		}
-		urls = append(urls, &u)
+		url := &entities.Url{
+			Id:        &id,
+			Url:       &urlStr,
+			Active:    &active,
+			CreatedAt: &createdAt,
+		}
+		urls = append(urls, url)
 	}
 	return urls, nil
 }
@@ -171,10 +207,23 @@ func (p *Postgres) UrlHistory(ctx context.Context, urlID int64) ([]entities.UrlH
 
 	history := make([]entities.UrlHistory, 0)
 	for rows.Next() {
-		var h entities.UrlHistory
-		if err := rows.Scan(&h.ID, &h.UrlID, &h.LatencyMs, &h.StatusCode, &h.CreatedAt); err != nil {
+		var (
+			id        int64
+			urlId     int64
+			latencyMs int64
+			status    int
+			createdAt time.Time
+		)
+		if err := rows.Scan(&id, &urlId, &latencyMs, &status, &createdAt); err != nil {
 			p.log.Errorw("failed to scan url history", "error", err, "url_id", urlID)
 			return nil, response.ErrHistoryList
+		}
+		h := entities.UrlHistory{
+			ID:         &id,
+			UrlID:      urlId,
+			LatencyMs:  latencyMs,
+			StatusCode: status,
+			CreatedAt:  createdAt,
 		}
 		history = append(history, h)
 	}
