@@ -11,7 +11,7 @@ Server:
   port: "3000"
 
 Monitor:
-  interval_seconds: 60
-  request_timeout_seconds: 5
-  history_limit: 100
-  max_concurrency: 5
+  intervalSeconds: 60
+  requestTimeoutSeconds: 5
+  historyLimit: 100
+  maxConcurrency: 5

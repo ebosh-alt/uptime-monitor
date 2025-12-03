@@ -8,7 +8,7 @@ require (
 	github.com/lib/pq v1.10.9
 	github.com/pashagolub/pgxmock/v3 v3.0.0
 	github.com/pressly/goose/v3 v3.26.0
-	github.com/spf13/viper v1.21.0
+	github.com/spf13/viper v1.20.1
 	go.uber.org/zap v1.27.1
 )
 
@@ -61,4 +61,5 @@ require (
 	golang.org/x/text v0.28.0 // indirect
 	golang.org/x/tools v0.35.0 // indirect
 	google.golang.org/protobuf v1.36.9 // indirect
+	gopkg.in/yaml.v3 v3.0.1 // indirect
 )

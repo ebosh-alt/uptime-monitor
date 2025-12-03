@@ -23,8 +23,8 @@ type ServerConfig struct {
 }
 
 type MonitorConfig struct {
-	IntervalSeconds       int `yaml:"interval_seconds" mapstructure:"interval_seconds"`
-	RequestTimeoutSeconds int `yaml:"request_timeout_seconds" mapstructure:"request_timeout_seconds"`
-	HistoryLimit          int `yaml:"history_limit" mapstructure:"history_limit"`
-	MaxConcurrency        int `yaml:"max_concurrency" mapstructure:"max_concurrency"`
+	IntervalSeconds       int `yaml:"intervalSeconds"`
+	RequestTimeoutSeconds int `yaml:"requestTimeoutSeconds"`
+	HistoryLimit          int `yaml:"historyLimit"`
+	MaxConcurrency        int `yaml:"maxConcurrency"`
 }

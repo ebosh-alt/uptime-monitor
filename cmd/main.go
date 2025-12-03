@@ -38,7 +38,7 @@ func main() {
 		)
 		os.Exit(1)
 	}
-
+	log.Infof("cfg: %v", cfg)
 	repo, err := repository.New("postgres", log, cfg, ctx)
 	if err != nil {
 		log.Errorw("Repository initialization error:",
@@ -54,7 +54,6 @@ func main() {
 		)
 		os.Exit(1)
 	}
-	log.Infof("cfg: %v", cfg)
 	uc := usecase.New(cfg, log, ctx, repo)
 	mon := monitor.New(cfg, log, repo)
 	mon.Start(ctx)

@@ -13,7 +13,6 @@ import (
 	"go.uber.org/zap"
 )
 
-// Monitor periodically checks active URLs and writes probe results to history.
 type Monitor struct {
 	cfg    config.MonitorConfig
 	log    *zap.SugaredLogger
@@ -87,14 +86,15 @@ func (m *Monitor) runIteration(ctx context.Context) {
 		}
 
 		m.sem <- struct{}{}
+		inFlight := len(m.sem)
 		wg.Add(1)
 		u := url
 		go func() {
 			defer wg.Done()
-			m.log.Debugw("monitor: acquired slot", "url", u.Url)
+			m.log.Debugw("monitor: acquired slot", "url", u.Url, "in_flight", inFlight, "max", m.maxC)
 			defer func() {
 				<-m.sem
-				m.log.Debugw("monitor: released slot", "url", u.Url)
+				m.log.Debugw("monitor: released slot", "url", u.Url, "in_flight", len(m.sem), "max", m.maxC)
 			}()
 			m.probe(ctx, u)
 		}()
