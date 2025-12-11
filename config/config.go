@@ -10,7 +10,7 @@ func NewConfig() (*Config, error) {
 	var cfg Config
 	v := viper.New()
 	v.AddConfigPath("config")
-	v.SetConfigName("config.dev")
+	v.SetConfigName("config.prod")
 	v.SetConfigType("yml")
 	err := v.ReadInConfig()
 	if err != nil {

@@ -1,6 +1,7 @@
 package handler
 
 import (
+	"uptime-monitor/internal/metrics"
 	"uptime-monitor/internal/usecase"
 
 	"github.com/gin-gonic/gin"
@@ -28,14 +29,17 @@ func New(log *zap.SugaredLogger, engine *gin.Engine, uc usecase.InterfaceUsecase
 
 func (h *Handler) RegisterRoutes() {
 	api := h.engine.Group("/api")
+	api.Use(metrics.Middleware())
+	api.GET("/metrics", metrics.MetricsHandler())
+
 	{
 		apiURL := api.Group("/url")
 		{
-			apiURL.POST("/", h.AddUrl)
+			apiURL.POST("", h.AddUrl)
 			apiURL.POST("/activate", h.ActivateUrl)
 			apiURL.POST("/deactivate", h.DeactivateUrl)
-			apiURL.DELETE("/", h.UrlDelete)
-			apiURL.GET("/", h.ListUrls)
+			apiURL.DELETE("", h.UrlDelete)
+			apiURL.GET("", h.ListUrls)
 			apiURL.GET("/:id/history", h.UrlHistory)
 		}
 	}

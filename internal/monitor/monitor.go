@@ -3,8 +3,10 @@ package monitor
 import (
 	"context"
 	"net/http"
+	"strconv"
 	"sync"
 	"time"
+	"uptime-monitor/internal/metrics"
 
 	"uptime-monitor/config"
 	"uptime-monitor/internal/entities"
@@ -80,13 +82,21 @@ func (m *Monitor) runIteration(ctx context.Context) {
 			m.log.Warnw("monitor: skipping url without required fields", "url", url)
 			continue
 		}
-		if url.Active != nil && !*url.Active {
+
+		idStr := strconv.FormatInt(*url.Id, 10)
+		urlStr := *url.Url
+		active := url.Active == nil || *url.Active
+
+		metrics.MonitorUrlActive.WithLabelValues(idStr, urlStr).Set(boolToFloat64(active))
+
+		if !active {
 			m.log.Debugw("monitor: skipping inactive url", "url", url)
 			continue
 		}
 
 		m.sem <- struct{}{}
 		inFlight := len(m.sem)
+		metrics.MonitorUrlsInFlight.Inc()
 		wg.Add(1)
 		u := url
 		go func() {
@@ -94,18 +104,19 @@ func (m *Monitor) runIteration(ctx context.Context) {
 			m.log.Debugw("monitor: acquired slot", "url", u.Url, "in_flight", inFlight, "max", m.maxC)
 			defer func() {
 				<-m.sem
+				metrics.MonitorUrlsInFlight.Dec()
 				m.log.Debugw("monitor: released slot", "url", u.Url, "in_flight", len(m.sem), "max", m.maxC)
 			}()
-			m.probe(ctx, u)
+			m.probe(ctx, u, idStr, urlStr)
 		}()
 	}
 
 	wg.Wait()
 }
 
-func (m *Monitor) probe(ctx context.Context, url *entities.Url) {
+func (m *Monitor) probe(ctx context.Context, url *entities.Url, idStr, urlStr string) {
 	start := time.Now()
-	statusCode := 0
+	statusCode := 404
 
 	reqCtx, cancel := context.WithTimeout(ctx, m.client.Timeout)
 	defer cancel()
@@ -137,4 +148,14 @@ func (m *Monitor) probe(ctx context.Context, url *entities.Url) {
 	}
 
 	m.log.Infow("monitor: probe complete", "url", url.Url, "status_code", statusCode, "latency_ms", latency)
+
+	metrics.MonitorLastStatusCode.WithLabelValues(idStr, urlStr).Set(float64(statusCode))
+	metrics.MonitorLastLatencyMs.WithLabelValues(idStr, urlStr).Set(float64(latency))
+}
+
+func boolToFloat64(v bool) float64 {
+	if v {
+		return 1
+	}
+	return 0
 }

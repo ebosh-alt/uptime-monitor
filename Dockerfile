@@ -8,8 +8,8 @@ RUN go mod download
 
 COPY . .
 
-# Собираем статический бинарник.
-RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -o admin_historium ./cmd
+# Собираем статический бинарник. Имя совпадает с тем, что копируем во второй стадии.
+RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -o uptime-monitor ./cmd
 
 FROM gcr.io/distroless/base-debian12
 
@@ -17,8 +17,9 @@ WORKDIR /app
 
 COPY --from=builder /app/uptime-monitor /app/uptime-monitor
 COPY --chown=nonroot:nonroot config /app/config
+COPY --chown=nonroot:nonroot db /app/db
 
-EXPOSE 3000
+EXPOSE 8080
 
 USER nonroot
 
