@@ -1,6 +1,6 @@
 Postgres:
-  port: 6132
-  host: localhost
+  port: 5432
+  host: uptime-monitor-db
   user: postgres
   password: postgres
   DBName: uptime_monitor_db
@@ -15,3 +15,4 @@ Monitor:
   requestTimeoutSeconds: 5
   historyLimit: 100
   maxConcurrency: 5
+
