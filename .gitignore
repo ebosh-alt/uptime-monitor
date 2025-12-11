@@ -16,6 +16,7 @@ coverage*
 
 # Dependency/vendor caches
 vendor/
+.cache/
 
 # IDE/editor
 .idea/
@@ -32,4 +33,3 @@ Thumbs.db
 config/.env
 config/config.dev.yaml
 config/config.prod.yaml
-
